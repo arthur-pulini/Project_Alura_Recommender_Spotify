@@ -6,6 +6,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import OneHotEncoder
 
 SEED = 1224
 np.random.seed(SEED)
@@ -96,3 +97,41 @@ fig = px.scatter(projection, x='x', y='y', color='cluster_PCA', hover_data=['x',
 #Avaliando o cluster
 print(pcaPipeline[1].explained_variance_ratio_.sum())#Mostra a taxa de explicando que o PCA esta dando para os dados
 print(pcaPipeline[1].explained_variance_.sum())#Mosta o quantas colunas estão sendo explicadas das 11 que tinhamos no início
+
+print(datas['artists'].value_counts())
+print(datas['artists_song'].value_counts())
+print('.')
+
+ohe = OneHotEncoder(dtype=int)#Ele faz basicamente a mesma coisa que o getDummies, porém ele é aplicado para pipelines
+
+columnsOhe = ohe.fit_transform(datas[['artists']]).toarray()
+print(columnsOhe)
+
+datasV2 = datas.drop('artists', axis=1)
+datasMusicDummies = pd.concat([datasV2, pd.DataFrame(columnsOhe, columns = ohe.get_feature_names_out(['artists']))], axis=1)
+print(datasMusicDummies)
+print(datas.shape)
+print(datasMusicDummies.shape)
+
+#Aplicando o PCA
+pcaPipeline = Pipeline([('scaler', StandardScaler()), ('PCA', PCA(n_components=0.7, random_state=SEED))])#Neste caso foi setado a taxa de aprendizado e não o nº de colunas
+
+musicEmbeddingPca = pcaPipeline.fit_transform(datasMusicDummies.drop(['id', 'name', 'artists_song'], axis=1))
+projectionM = pd.DataFrame(data = musicEmbeddingPca)
+print(pcaPipeline[1].n_components_)
+
+kmeansPcaPipeline = KMeans(n_clusters=50, verbose=False, random_state=SEED)
+
+kmeansPcaPipeline.fit(projectionM)
+
+datas['cluster_PCA'] = kmeansPcaPipeline.predict(projectionM)
+projectionM['cluster_PCA'] = kmeansPcaPipeline.predict(projectionM)
+projectionM['artist'] = datas['artists']
+projectionM['song'] = datas['artists_song']
+print(projectionM)
+
+fig = px.scatter(projectionM, x=0, y=1, color='cluster_PCA', hover_data=[0, 1, 'song'])
+#fig.show()
+
+print(pcaPipeline[1].explained_variance_ratio_.sum())
+print(pcaPipeline[1].explained_variance_.sum())
