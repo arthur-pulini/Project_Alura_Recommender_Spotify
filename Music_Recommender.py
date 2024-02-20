@@ -130,7 +130,7 @@ projectionM['artist'] = datas['artists']
 projectionM['song'] = datas['artists_song']
 print(projectionM)
 
-fig = px.scatter(projectionM, x=0, y=1, color='cluster_PCA', hover_data=[0, 1, 'song'])
+fig = px.scatter_3d(projectionM, x=0, y=1, z=2, color='cluster_PCA', hover_data=[0, 1, 2, 'song'])
 #fig.show()
 
 print(pcaPipeline[1].explained_variance_ratio_.sum())
