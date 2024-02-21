@@ -2,11 +2,17 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import spotipy
+import matplotlib.pyplot as plt
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics.pairwise import euclidean_distances
+from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyClientCredentials
+from skimage import io
 
 SEED = 1224
 np.random.seed(SEED)
@@ -135,3 +141,44 @@ fig = px.scatter_3d(projectionM, x=0, y=1, z=2, color='cluster_PCA', hover_data=
 
 print(pcaPipeline[1].explained_variance_ratio_.sum())
 print(pcaPipeline[1].explained_variance_.sum())
+
+#Recomendação da música
+songName = 'Five Finger Death Punch - Bad Company'
+cluster = list(projectionM[projectionM['song'] == songName]['cluster_PCA'])[0]
+print(cluster)
+recommendedSongs = projectionM[projectionM['cluster_PCA'] == cluster][[0, 1, 'song']]
+xSong = list(projectionM[projectionM['song'] == songName][0])[0]
+ySong = list(projectionM[projectionM['song'] == songName][1])[0]
+
+#Distâncias euclidianas
+distances = euclidean_distances(recommendedSongs[[0, 1]], [[xSong, ySong]])
+recommendedSongs['id'] = datas['id']
+recommendedSongs['distances'] = distances
+recommended = recommendedSongs.sort_values('distances').head(10)
+print(recommended)
+
+#Configurando o spotipy
+scope = "user-library-read playlist-modify-private"
+OAuth = SpotifyOAuth(
+        scope=scope,         
+        redirect_uri='http://localhost:5000/callback',
+        client_id = '...',
+        client_secret = '...')
+
+client_credentials_manager = SpotifyClientCredentials(client_id = '...',client_secret = '...')
+sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
+
+#Importando a imagem do álbum
+#Achando o Id
+songName = 'Five Finger Death Punch - Bad Company'
+id = datas[datas['artists_song'] == songName]['id'].iloc[0]
+
+#Fazendo a requisição na API
+track = sp.track(id)
+url = track["album"]["images"][1]["url"]
+name = track["name"]
+
+image = io.imread(url)
+plt.imshow(image)
+plt.xlabel(name, fontsize = 10)
+plt.show()
