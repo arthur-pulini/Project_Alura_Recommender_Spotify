@@ -143,7 +143,7 @@ print(pcaPipeline[1].explained_variance_ratio_.sum())
 print(pcaPipeline[1].explained_variance_.sum())
 
 #Recomendação da música
-songName = 'Five Finger Death Punch - Bad Company'
+songName = 'Ed Sheeran - Shape of You'
 cluster = list(projectionM[projectionM['song'] == songName]['cluster_PCA'])[0]
 print(cluster)
 recommendedSongs = projectionM[projectionM['cluster_PCA'] == cluster][[0, 1, 'song']]
@@ -162,15 +162,15 @@ scope = "user-library-read playlist-modify-private"
 OAuth = SpotifyOAuth(
         scope=scope,         
         redirect_uri='http://localhost:5000/callback',
-        client_id = '...',
-        client_secret = '...')
+        client_id = 'a168df4934644d899b576fec4c16c264',
+        client_secret = '16eeb4252af54281bf311193b1cb1b99')
 
-client_credentials_manager = SpotifyClientCredentials(client_id = '...',client_secret = '...')
+client_credentials_manager = SpotifyClientCredentials(client_id = 'a168df4934644d899b576fec4c16c264',client_secret = '16eeb4252af54281bf311193b1cb1b99')
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 
 #Importando a imagem do álbum
 #Achando o Id
-songName = 'Five Finger Death Punch - Bad Company'
+songName = 'Ed Sheeran - Shape of You'
 id = datas[datas['artists_song'] == songName]['id'].iloc[0]
 
 #Fazendo a requisição na API
@@ -181,4 +181,59 @@ name = track["name"]
 image = io.imread(url)
 plt.imshow(image)
 plt.xlabel(name, fontsize = 10)
-plt.show()
+#plt.show()
+
+#Buscando os dados da playlist
+def recommend_id(playlist_id): 
+    url = []
+    name = []
+    for i in playlist_id:
+        track = sp.track(i)
+        url.append(track["album"]["images"][1]["url"])
+        name.append(track["name"])
+    return name, url
+
+name, url = recommend_id(recommended['id'])
+print(name, url)
+
+def visualizeSongs (name, url):
+    plt.figure(figsize=(15,10))
+    columns = 5
+    for i, u in enumerate(url):
+        # define o ax como o subplot, com a divisão que retorna inteiro do número urls pelas colunas + 1 (no caso, 6)
+        ax = plt.subplot(len(url) // columns + 1, columns, i + 1)
+
+        # Lendo a imagem com o Scikit Image
+        image = io.imread(u)
+
+        # Mostra a imagem
+        plt.imshow(image)
+
+        # Para deixar o eixo Y invisível 
+        ax.get_yaxis().set_visible(False)
+
+        # xticks define o local que vamos trocar os rótulos do eixo x, nesse caso, deixar os pontos de marcação brancos
+        plt.xticks(color = 'w', fontsize = 0.1)
+
+        # yticks define o local que vamos trocar os rótulos do eixo y, nesse caso, deixar os pontos de marcação brancos
+        plt.yticks(color = 'w', fontsize = 0.1)
+
+        # Colocando o nome da música no eixo x
+        plt.xlabel(name[i], fontsize = 8)
+
+        # Faz com que todos os parâmetros se encaixem no tamanho da imagem definido
+        plt.tight_layout(h_pad=0.7, w_pad=0)
+
+        # Ajusta os parâmetros de layout da imagem.
+        # wspace = A largura do preenchimento entre subparcelas, como uma fração da largura média dos eixos.
+        # hspace = A altura do preenchimento entre subparcelas, como uma fração da altura média dos eixos.
+        plt.subplots_adjust(wspace=0.05, hspace=0.08)
+
+        # Remove os ticks - marcadores, do eixo x, sem remover o eixo todo, deixando o nome da música.
+        plt.tick_params(bottom = False)
+
+        # Tirar a grade da imagem, gerada automaticamente pelo matplotlib
+        plt.grid(visible=None, which='major', axis='y')
+    #plt.show()
+
+visualizeSongs(name, url)
